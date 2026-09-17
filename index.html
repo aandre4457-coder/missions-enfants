@@ -31,7 +31,7 @@
   .kid-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
   .kid-tab.add{border-style:dashed;color:var(--navy);}
   .day-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
-  .day-pill{flex:0 0 auto;padding:7px 10px;border-radius:12px;background:#F3F6FA;border:2px solid transparent;font-size:12px;font-weight:700;color:#5C6B7A;cursor:pointer;}
+  .day-pill{flex:0 0 auto;padding:7px 10px;border-radius:12px;background:#F3F6FA;border:2px solid transparent;font-size:12px;font-weight:700;color:#5C6B7A;cursor:pointer;text-align:center;line-height:1.5;}
   .day-pill.today{color:var(--navy);}
   .day-pill.active{background:var(--navy);color:#fff;}
   .section-title{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--navy-dark);margin-bottom:10px;}
@@ -196,6 +196,12 @@ function weekRangeLabel(offset){
 function prevWeek(){ weekOffset -= 1; render(); }
 function nextWeek(){ if(weekOffset < 0){ weekOffset += 1; render(); } }
 function goToday(){ weekOffset = 0; currentDay = todayFR(); render(); }
+function dateForDay(offset, jourIndex){
+  const d = new Date(weekStartISO(offset)+'T00:00:00');
+  d.setDate(d.getDate()+jourIndex);
+  return d;
+}
+function shortDate(d){ return d.toLocaleDateString('fr-FR', {day:'numeric', month:'numeric'}); }
 function slugify(name){
   return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || ('enfant'+Date.now());
 }
@@ -284,25 +290,25 @@ async function toggleDefi(defiId){
   const child=getCurrentChild(); if(!child) return;
   const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
   const newVal = !(day.checks && day.checks[defiId]);
-  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { checks: { [defiId]: newVal } } } } } });
+  await patchChild({ [`weeks.${ws}.days.${currentDay}.checks.${defiId}`]: newVal });
 }
 async function toggleBonus(){
   const child=getCurrentChild(); if(!child) return;
   const ws=weekStartISO(weekOffset); const week=ensureWeek(child);
-  await patchChild({ weeks: { [ws]: { bonus: !week.bonus } } });
+  await patchChild({ [`weeks.${ws}.bonus`]: !week.bonus });
 }
 async function addPenalty(penId){
   const child=getCurrentChild(); if(!child) return;
   const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
   const newCount = ((day.penalties && day.penalties[penId])||0)+1;
-  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { penalties: { [penId]: newCount } } } } } });
+  await patchChild({ [`weeks.${ws}.days.${currentDay}.penalties.${penId}`]: newCount });
 }
 async function removePenalty(penId){
   const child=getCurrentChild(); if(!child) return;
   const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
   const cur = ((day.penalties && day.penalties[penId])||0);
   if(cur<=0) return;
-  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { penalties: { [penId]: cur-1 } } } } } });
+  await patchChild({ [`weeks.${ws}.days.${currentDay}.penalties.${penId}`]: cur-1 });
 }
 async function redeem(reward){
   const child=getCurrentChild(); if(!child) return;
@@ -378,12 +384,14 @@ function render(){
   `;
 
   html += '<div class="day-row">';
-  JOURS.forEach(j=>{
-    html += `<div class="day-pill ${j===currentDay?'active':''} ${j===today?'today':''}" onclick="selectDay('${j}')">${j.slice(0,3)}</div>`;
+  JOURS.forEach((j,idx)=>{
+    const dLabel = shortDate(dateForDay(weekOffset, idx));
+    html += `<div class="day-pill ${j===currentDay?'active':''} ${j===today && weekOffset===0?'today':''}" onclick="selectDay('${j}')">${j.slice(0,3)}<br><span style="font-size:10px;font-weight:600;opacity:0.85;">${dLabel}</span></div>`;
   });
   html += '</div>';
 
-  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--navy)"></span>Missions du ' + currentDay.toLowerCase() + '</div>';
+  const currentDayIdx = JOURS.indexOf(currentDay);
+  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--navy)"></span>Missions du ' + currentDay.toLowerCase() + ' <span style="color:#9AA6B2;font-weight:600;font-size:12px;">' + shortDate(dateForDay(weekOffset, currentDayIdx)) + '</span></div>';
   const applicable = defisForDay(currentDay);
   PERIOD_ORDER.forEach(period=>{
     const items = applicable.filter(d=>d.period===period);
@@ -440,12 +448,12 @@ function render(){
   `;
   html += '<table class="recap"><tr><th>Jour</th><th>Gagnés</th><th>Perdus</th><th>Total</th></tr>';
   let weekTotal = 0;
-  JOURS.forEach(j=>{
+  JOURS.forEach((j,idx)=>{
     const d = (week.days && week.days[j]) || {checks:{}, penalties:{}};
     const t = dayTotals(d, j);
     weekTotal += t.total;
-    html += `<tr class="${j===today?'today-row':''}">
-      <td>${j}</td>
+    html += `<tr class="${j===today && weekOffset===0?'today-row':''}">
+      <td>${j} <span style="color:#9AA6B2;font-weight:600;">${shortDate(dateForDay(weekOffset, idx))}</span></td>
       <td class="gain">${t.gained ? '+'+t.gained : '–'}</td>
       <td class="loss">${t.lost ? '-'+t.lost : '–'}</td>
       <td>${t.total}</td>
