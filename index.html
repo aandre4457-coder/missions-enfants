@@ -374,6 +374,7 @@ function render(){
   const today = todayFR();
 
   html += `
+    <div id="weekSwipeZone" style="padding:2px 4px 6px;border-radius:18px;">
     <div class="balance-card">
       <div>
         <div class="label">SOLDE DE ${escapeHtml(child.name).toUpperCase()} (CUMULÉ)</div>
@@ -381,15 +382,15 @@ function render(){
       </div>
       <div class="today">${weekOffset===0 ? "Aujourd'hui" : "Jour choisi"} (${currentDay})<b>${totals.total >= 0 ? '+' : ''}${totals.total} pts</b></div>
     </div>
+    <div class="day-row">
   `;
-
-  html += '<div class="day-row" id="dayRow">';
   JOURS.forEach((j,idx)=>{
     const dLabel = shortDate(dateForDay(weekOffset, idx));
     html += `<div class="day-pill ${j===currentDay?'active':''} ${j===today && weekOffset===0?'today':''}" onclick="selectDay('${j}')">${j.slice(0,3)}<br><span style="font-size:10px;font-weight:600;opacity:0.85;">${dLabel}</span></div>`;
   });
   html += '</div>';
-  html += `<div class="empty-hint" style="margin-top:-6px;margin-bottom:8px;">‹ Glisse ici pour changer de semaine ›</div>`;
+  html += `<div class="empty-hint" style="margin-top:-6px;margin-bottom:2px;">‹ ‹ Glisse ici (haut de l'écran) pour changer de semaine › ›</div>`;
+  html += `</div>`;
 
   const currentDayIdx = JOURS.indexOf(currentDay);
   html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--navy)"></span>Missions du ' + currentDay.toLowerCase() + ' <span style="color:#9AA6B2;font-weight:600;font-size:12px;">' + shortDate(dateForDay(weekOffset, currentDayIdx)) + '</span></div>';
@@ -516,7 +517,7 @@ if('serviceWorker' in navigator){
   let startX = null, startY = null, startedInZone = false;
   document.addEventListener('touchstart', (e)=>{
     const t = e.touches[0];
-    startedInZone = !!(e.target.closest && e.target.closest('#dayRow'));
+    startedInZone = !!(e.target.closest && e.target.closest('#weekSwipeZone'));
     startX = t.clientX; startY = t.clientY;
   }, {passive:true});
   document.addEventListener('touchend', (e)=>{
@@ -525,7 +526,7 @@ if('serviceWorker' in navigator){
     const dx = t.clientX - startX;
     const dy = t.clientY - startY;
     startX=null; startY=null; startedInZone=false;
-    if(Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)*1.5){
+    if(Math.abs(dx) > 30 && Math.abs(dx) > Math.abs(dy)){
       if(dx < 0) nextWeek(); else prevWeek();
     }
   }, {passive:true});
