@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Bons points & récompenses</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#E7F1FB; --sky-bottom:#FFF3E6; --ink:#1F2A37;
+    --navy:#2F6690; --navy-dark:#204A6B; --gold:#F2A93B; --gold-dark:#C9821B;
+    --coral:#E4572E; --coral-dark:#B93F1D; --sage:#5E9C7B; --sage-dark:#3F7A5C;
+    --card:#FFFFFF; --line:#E4E9F0; --shadow:0 4px 14px rgba(31,42,55,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Nunito Sans', system-ui, sans-serif;color:var(--ink);background:linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 100%);min-height:100vh;padding:14px 12px 40px;}
+  h1,h2,h3{font-family:'Fredoka', system-ui, sans-serif; margin:0;}
+  .app{max-width:480px;margin:0 auto;}
+  .hero{text-align:center;padding:8px 4px 18px;}
+  .hero .sun{font-size:34px;line-height:1;}
+  .hero h1{font-size:22px;color:var(--navy-dark);margin-top:4px;}
+  .hero p{margin:4px 0 0;font-size:13px;color:#5C6B7A;}
+  .card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:14px;margin-bottom:14px;}
+  .kid-row{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;margin-bottom:4px;-webkit-overflow-scrolling:touch;}
+  .kid-tab{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;border:2px solid var(--line);font-family:'Fredoka';font-weight:600;font-size:14px;color:#5C6B7A;cursor:pointer;white-space:nowrap;}
+  .kid-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .kid-tab.add{border-style:dashed;color:var(--navy);}
+  .day-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+  .day-pill{flex:0 0 auto;padding:7px 10px;border-radius:12px;background:#F3F6FA;border:2px solid transparent;font-size:12px;font-weight:700;color:#5C6B7A;cursor:pointer;}
+  .day-pill.today{color:var(--navy);}
+  .day-pill.active{background:var(--navy);color:#fff;}
+  .section-title{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--navy-dark);margin-bottom:10px;}
+  .section-title .dot{width:9px;height:9px;border-radius:3px;background:var(--navy);display:inline-block;}
+  .period-title{font-family:'Fredoka';font-size:12.5px;font-weight:600;color:#8B98A6;margin:12px 0 4px;text-transform:uppercase;letter-spacing:0.03em;}
+  .period-title:first-child{margin-top:0;}
+  .defi-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .defi-row:last-child{border-bottom:none;}
+  .defi-icon{font-size:20px;width:26px;text-align:center;}
+  .defi-label{flex:1;font-size:14px;font-weight:600;line-height:1.25;}
+  .defi-pts{font-size:12px;color:var(--gold-dark);font-weight:800;white-space:nowrap;}
+  .checkbox{width:26px;height:26px;border-radius:8px;border:2px solid #C9D3DD;flex:0 0 auto;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;color:transparent;background:#fff;}
+  .checkbox.checked{background:var(--sage);border-color:var(--sage);color:#fff;}
+  .bonus-row{display:flex;align-items:center;gap:10px;background:#FFF6E3;border-radius:12px;padding:10px 10px;margin-top:8px;}
+  .bonus-row .defi-label{color:var(--gold-dark);}
+  .penalty-chip{display:flex;align-items:center;gap:8px;width:100%;background:#FDEDE8;border:none;border-radius:12px;padding:9px 10px;margin-bottom:8px;cursor:pointer;text-align:left;}
+  .penalty-chip:last-child{margin-bottom:0;}
+  .penalty-icon{font-size:18px;width:22px;text-align:center;}
+  .penalty-label{flex:1;font-size:13.5px;font-weight:600;color:var(--coral-dark);}
+  .penalty-pts{font-size:12px;font-weight:800;color:var(--coral-dark);}
+  .penalty-count{background:var(--coral);color:#fff;font-size:11px;font-weight:800;min-width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+  .balance-card{background:linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);color:#fff;border-radius:18px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);}
+  .balance-card .label{font-size:12px;opacity:0.85;font-weight:700;}
+  .balance-card .num{font-family:'Fredoka';font-size:30px;font-weight:700;}
+  .balance-card .today{text-align:right;font-size:12px;opacity:0.9;}
+  .balance-card .today b{font-family:'Fredoka';font-size:16px;display:block;}
+  .reward-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .reward-row:last-child{border-bottom:none;}
+  .reward-icon{font-size:18px;width:22px;text-align:center;}
+  .reward-label{flex:1;font-size:13.5px;font-weight:600;}
+  .reward-cost{font-size:12px;font-weight:800;color:var(--sage-dark);white-space:nowrap;}
+  .reward-btn{font-family:'Fredoka';font-size:12px;font-weight:600;border:none;border-radius:10px;padding:7px 11px;cursor:pointer;background:var(--sage);color:#fff;}
+  .reward-btn:disabled{background:#DDE3E9;color:#9AA6B2;cursor:not-allowed;}
+  table.recap{width:100%;border-collapse:collapse;font-size:12.5px;}
+  table.recap th{font-family:'Fredoka';font-weight:600;color:var(--navy-dark);text-align:left;padding:6px 4px;border-bottom:2px solid var(--line);}
+  table.recap td{padding:6px 4px;border-bottom:1px solid var(--line);}
+  table.recap tr.today-row td{font-weight:800;}
+  .gain{color:var(--sage-dark);font-weight:700;}
+  .loss{color:var(--coral-dark);font-weight:700;}
+  .bonus-tag{font-size:11px;background:#FFF6E3;color:var(--gold-dark);padding:2px 6px;border-radius:6px;font-weight:800;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,0.25);opacity:0;transition:opacity .25s ease, transform .25s ease;pointer-events:none;z-index:50;max-width:88%;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+  .add-form{display:flex;gap:8px;margin-top:6px;}
+  .add-form input{flex:1;border:2px solid var(--line);border-radius:10px;padding:9px 10px;font-size:14px;font-family:inherit;}
+  .add-form button{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-family:'Fredoka';font-weight:600;cursor:pointer;}
+  .empty-hint{font-size:13px;color:#5C6B7A;text-align:center;padding:6px 0 2px;}
+  .history-toggle{font-size:12px;color:var(--navy);font-weight:700;cursor:pointer;text-align:right;margin-top:2px;}
+  .history-item{font-size:12px;color:#5C6B7A;padding:4px 0;display:flex;justify-content:space-between;border-bottom:1px solid var(--line);}
+  .history-item:last-child{border-bottom:none;}
+  .undo-btn{font-size:11px;color:var(--coral-dark);font-weight:700;cursor:pointer;background:none;border:none;padding:0;}
+  .loading{text-align:center;padding:40px 0;color:#5C6B7A;font-size:14px;}
+  .remove-kid{font-size:11px;color:#B0BAC5;text-align:center;margin-top:2px;cursor:pointer;}
+  .sync-badge{font-size:11px;color:#8B98A6;text-align:center;margin-top:-4px;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="hero">
+    <div class="sun">☀️</div>
+    <h1>Bons points & récompenses</h1>
+    <p>Les bons comportements du quotidien, récompensés</p>
+  </div>
+  <div class="sync-badge">🔄 Synchronisé entre tous les appareils</div>
+  <div id="content"><div class="loading">Chargement…</div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!--
+  ============================================================
+  CONFIGURATION FIREBASE — à faire une seule fois
+  1) Va sur https://console.firebase.google.com
+  2) Crée un projet (gratuit)
+  3) Dans le projet : "Créer une base de données" -> Firestore Database
+     -> commence en "mode test"
+  4) Dans les paramètres du projet (roue dentée) -> "Vos applications"
+     -> ajoute une application Web (</>) -> copie l'objet de config
+  5) Remplace les valeurs ci-dessous par les tiennes
+  ============================================================
+-->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "REMPLACE_MOI",
+  authDomain: "REMPLACE_MOI.firebaseapp.com",
+  projectId: "REMPLACE_MOI",
+  storageBucket: "REMPLACE_MOI.appspot.com",
+  messagingSenderId: "REMPLACE_MOI",
+  appId: "REMPLACE_MOI"
+};
+firebase.initializeApp(firebaseConfig);
+const firestoreDb = firebase.firestore();
+</script>
+
+<script>
+const DEFIS = [
+  {id:'reveil', period:'matin', icon:'⏰', label:'Se lever au premier réveil', pts:5},
+  {id:'habiller', period:'matin', icon:'👕', label:"S'habiller seul", pts:5},
+  {id:'poubelle', period:'matin', icon:'🗑️', label:'Mettre à la poubelle lingette/couche', pts:5},
+  {id:'petitdej', period:'matin', icon:'🥣', label:'Prendre le petit déjeuner calmement', pts:5},
+  {id:'dents', period:'matin', icon:'🪥', label:'Se brosser les dents sans rappel', pts:10},
+  {id:'chaussures', period:'matin', icon:'👟', label:'Mettre ses chaussures et son manteau', pts:10},
+  {id:'table', period:'journee', icon:'🍽️', label:'Mettre/débarrasser la table', pts:5},
+  {id:'chambre', period:'journee', icon:'🧸', label:'Ranger sa chambre', pts:5},
+  {id:'linge', period:'journee', icon:'🧺', label:'Ranger son linge correctement', pts:5},
+  {id:'douche', period:'journee', icon:'🚿', label:'Prendre sa douche efficacement', pts:5},
+  {id:'preparer', period:'journee', icon:'🧳', label:'Préparer son sac et vêtements (pour le lendemain)', pts:5},
+  {id:'lit', period:'weekend', icon:'🛏️', label:'Faire son lit', pts:5, days:['Mercredi','Samedi','Dimanche']},
+  {id:'jouets', period:'weekend', icon:'🧩', label:'Ranger ses jouets après le jeu', pts:5, days:['Samedi','Dimanche']},
+];
+const PERIOD_LABEL = {matin:'🌅 Matin', journee:'🏡 Journée', weekend:'🎉 Week-end'};
+const PERIOD_ORDER = ['matin','journee','weekend'];
+const BONUS = {id:'bonus', label:"Partir à l'heure toute la semaine", pts:20};
+const PENALTIES = [
+  {id:'trainer', icon:'🐌', label:"Traîner au moment de s'habiller", pts:5},
+  {id:'oublier', icon:'🎒', label:'Oublier ses affaires', pts:10},
+  {id:'discuter', icon:'💬', label:"Discuter au lieu d'avancer", pts:10},
+  {id:'crise', icon:'⛈️', label:'Crise juste avant de partir', pts:15},
+  {id:'chambre', icon:'🧦', label:'Chambre pas rangée malgré le rappel', pts:10},
+  {id:'insolence', icon:'😤', label:'Répondre avec insolence', pts:10},
+  {id:'affaires', icon:'🧢', label:"Laisser ses affaires n'importe où", pts:5},
+  {id:'ecrans', icon:'📵', label:'Écrans sans autorisation', pts:15},
+  {id:'coucher', icon:'🌙', label:"Ne pas se coucher à l'heure", pts:10},
+];
+const REWARDS = [
+  {id:'musique', icon:'🎵', label:'Choisir la musique du trajet', cost:25},
+  {id:'copains', icon:'🛴', label:'Sortie avec les copains', cost:30},
+  {id:'tablette', icon:'📱', label:'Jouer à la tablette', cost:30},
+  {id:'console', icon:'🕹️', label:'Jouer à la console', cost:40},
+  {id:'film', icon:'🎬', label:'Choisir un film en famille en soirée', cost:40},
+  {id:'repasweekend', icon:'🍔', label:'Choisir le repas du week-end (1 fois)', cost:60},
+  {id:'sortie', icon:'🎡', label:'Sortie au choix (parc, piscine, cinéma)', cost:65},
+  {id:'soiree', icon:'🎲', label:'Soirée jeux', cost:70},
+  {id:'petitdejweekend', icon:'🥞', label:'Petit déjeuner spécial du week-end', cost:80},
+  {id:'copain', icon:'🧑‍🤝‍🧑', label:'Inviter un copain/copine à la maison', cost:90},
+];
+const JOURS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+
+let dbError = false;
+let childrenLoaded = false;
+let CHILDREN = [];
+let currentSlug = null;
+let currentDay = todayFR();
+let addingChild = false;
+let removingSlug = null;
+let historyOpen = false;
+
+function todayFR(){ const idx=(new Date().getDay()+6)%7; return JOURS[idx]; }
+function weekStartISO(){ const d=new Date(); const idx=(d.getDay()+6)%7; d.setDate(d.getDate()-idx); return d.toISOString().slice(0,10); }
+function slugify(name){
+  return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || ('enfant'+Date.now());
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'), 2400);
+}
+function defisForDay(jour){ return DEFIS.filter(d=>!d.days || d.days.includes(jour)); }
+function dayTotals(dayObj, jour){
+  let gained=0, lost=0;
+  defisForDay(jour).forEach(d=>{ if(dayObj.checks && dayObj.checks[d.id]) gained+=d.pts; });
+  PENALTIES.forEach(p=>{ const n=(dayObj.penalties&&dayObj.penalties[p.id])||0; lost+=n*p.pts; });
+  return {gained, lost, total: gained-lost};
+}
+function balanceTotal(child){
+  let total=0;
+  const weeks = child.weeks || {};
+  Object.values(weeks).forEach(week=>{
+    JOURS.forEach(j=>{ if(week.days && week.days[j]) total += dayTotals(week.days[j], j).total; });
+    if(week.bonus) total += BONUS.pts;
+  });
+  const spent = (child.redemptions||[]).reduce((s,r)=>s+r.cost,0);
+  return total - spent;
+}
+function getCurrentChild(){ return CHILDREN.find(c=>c.id===currentSlug) || null; }
+function ensureWeek(child){ const ws=weekStartISO(); return (child.weeks && child.weeks[ws]) ? child.weeks[ws] : {days:{}, bonus:false}; }
+function ensureDay(week, jour){ return (week.days && week.days[jour]) ? week.days[jour] : {checks:{}, penalties:{}}; }
+
+function deepMerge(target, patch){
+  Object.keys(patch).forEach(k=>{
+    if(patch[k] && typeof patch[k]==='object' && !Array.isArray(patch[k])){
+      if(!target[k] || typeof target[k]!=='object' || Array.isArray(target[k])) target[k]={};
+      deepMerge(target[k], patch[k]);
+    } else {
+      target[k]=patch[k];
+    }
+  });
+  return target;
+}
+
+async function patchChild(patch){
+  if(!currentSlug) return;
+  try{
+    await firestoreDb.collection('enfants').doc(currentSlug).update(patch);
+  }catch(e){
+    showToast("Enregistrement impossible, vérifie ta connexion");
+  }
+}
+
+function init(){
+  try{
+    firestoreDb.collection('enfants').orderBy('createdAt','asc').onSnapshot(
+      snap=>{
+        childrenLoaded = true;
+        CHILDREN = snap.docs.map(d=>({id:d.id, ...d.data()}));
+        if(CHILDREN.length===0) addingChild = true;
+        if(!currentSlug && CHILDREN.length>0) currentSlug = CHILDREN[0].id;
+        if(currentSlug && !CHILDREN.find(c=>c.id===currentSlug)) currentSlug = CHILDREN.length>0 ? CHILDREN[0].id : null;
+        render();
+      },
+      err=>{ dbError = true; render(); }
+    );
+  }catch(e){ dbError = true; render(); }
+}
+
+async function addChild2(){
+  const input = document.getElementById('newKidInput2');
+  const name = (input.value||'').trim();
+  if(!name) return;
+  const slug = slugify(name) + '-' + Math.random().toString(36).slice(2,6);
+  try{
+    await firestoreDb.collection('enfants').doc(slug).set({name, weeks:{}, redemptions:[], createdAt: Date.now()});
+    currentSlug = slug;
+  }catch(e){ showToast("Impossible d'ajouter l'enfant"); }
+  addingChild = false;
+  render();
+}
+function cancelAdd(){ addingChild=false; render(); }
+function selectChild(id){ currentSlug = id; historyOpen=false; addingChild=false; removingSlug=null; render(); }
+function selectDay(jour){ currentDay = jour; render(); }
+
+async function toggleDefi(defiId){
+  const child=getCurrentChild(); if(!child) return;
+  const ws=weekStartISO(); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
+  const newVal = !(day.checks && day.checks[defiId]);
+  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { checks: { [defiId]: newVal } } } } } });
+}
+async function toggleBonus(){
+  const child=getCurrentChild(); if(!child) return;
+  const ws=weekStartISO(); const week=ensureWeek(child);
+  await patchChild({ weeks: { [ws]: { bonus: !week.bonus } } });
+}
+async function addPenalty(penId){
+  const child=getCurrentChild(); if(!child) return;
+  const ws=weekStartISO(); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
+  const newCount = ((day.penalties && day.penalties[penId])||0)+1;
+  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { penalties: { [penId]: newCount } } } } } });
+}
+async function redeem(reward){
+  const child=getCurrentChild(); if(!child) return;
+  const balance = balanceTotal(child);
+  if(balance < reward.cost) return;
+  const newRedemptions = [...(child.redemptions||[]), {date:new Date().toISOString(), reward:reward.label, cost:reward.cost}];
+  await patchChild({redemptions:newRedemptions});
+  showToast(`${reward.label} échangé 🎉`);
+}
+async function undoRedeem(index){
+  const child=getCurrentChild(); if(!child) return;
+  const newRedemptions = (child.redemptions||[]).slice();
+  newRedemptions.splice(index,1);
+  await patchChild({redemptions:newRedemptions});
+}
+function toggleHistory(){ historyOpen=!historyOpen; render(); }
+function askRemove(id){ removingSlug=id; render(); }
+function cancelRemove(){ removingSlug=null; render(); }
+async function doRemove(id){
+  try{ await firestoreDb.collection('enfants').doc(id).delete(); }
+  catch(e){ showToast("Suppression impossible"); }
+  removingSlug=null;
+  if(currentSlug===id) currentSlug=null;
+  render();
+}
+
+function render(){
+  const contentEl = document.getElementById('content');
+  if(dbError){
+    contentEl.innerHTML = `<div class="card"><div class="section-title"><span class="dot" style="background:var(--coral)"></span>Connexion impossible</div><p class="empty-hint">Vérifie ta connexion internet, ou que la configuration Firebase en haut du fichier a bien été remplie.</p></div>`;
+    return;
+  }
+  if(!childrenLoaded){ contentEl.innerHTML = '<div class="loading">Chargement…</div>'; return; }
+
+  let html = '';
+  html += '<div class="kid-row">';
+  CHILDREN.forEach(c=>{
+    html += `<div class="kid-tab ${c.id===currentSlug?'active':''}" onclick="selectChild('${c.id}')">👦 ${escapeHtml(c.name)}</div>`;
+  });
+  html += `<div class="kid-tab add" onclick="addingChild=true; render();">+ Ajouter</div>`;
+  html += '</div>';
+
+  if(addingChild){
+    html += `
+      <div class="card" style="margin-top:-6px;">
+        <div class="section-title"><span class="dot"></span>Nouvel enfant</div>
+        <div class="add-form">
+          <input id="newKidInput2" placeholder="Prénom" maxlength="20">
+          <button onclick="addChild2()">Ajouter</button>
+        </div>
+        ${CHILDREN.length>0 ? `<div class="empty-hint" style="cursor:pointer;" onclick="cancelAdd()">Annuler</div>` : ''}
+      </div>
+    `;
+  }
+
+  const child = getCurrentChild();
+  if(!child){ document.getElementById('content').innerHTML = html; return; }
+
+  const week = ensureWeek(child);
+  const day = ensureDay(week, currentDay);
+  const totals = dayTotals(day, currentDay);
+  const balance = balanceTotal(child);
+  const today = todayFR();
+
+  html += `
+    <div class="balance-card">
+      <div>
+        <div class="label">SOLDE DE ${escapeHtml(child.name).toUpperCase()}</div>
+        <div class="num">${balance} pts</div>
+      </div>
+      <div class="today">Aujourd'hui (${currentDay})<b>${totals.total >= 0 ? '+' : ''}${totals.total} pts</b></div>
+    </div>
+  `;
+
+  html += '<div class="day-row">';
+  JOURS.forEach(j=>{
+    html += `<div class="day-pill ${j===currentDay?'active':''} ${j===today?'today':''}" onclick="selectDay('${j}')">${j.slice(0,3)}</div>`;
+  });
+  html += '</div>';
+
+  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--navy)"></span>Missions du ' + currentDay.toLowerCase() + '</div>';
+  const applicable = defisForDay(currentDay);
+  PERIOD_ORDER.forEach(period=>{
+    const items = applicable.filter(d=>d.period===period);
+    if(items.length===0) return;
+    html += `<div class="period-title">${PERIOD_LABEL[period]}</div>`;
+    items.forEach(d=>{
+      const checked = !!(day.checks && day.checks[d.id]);
+      html += `
+        <div class="defi-row">
+          <div class="defi-icon">${d.icon}</div>
+          <div class="defi-label">${d.label}</div>
+          <div class="defi-pts">${d.pts} pts</div>
+          <div class="checkbox ${checked?'checked':''}" onclick="toggleDefi('${d.id}')">${checked?'✓':''}</div>
+        </div>
+      `;
+    });
+  });
+  html += `
+    <div class="bonus-row">
+      <div class="defi-icon">⭐</div>
+      <div class="defi-label">${BONUS.label}</div>
+      <div class="defi-pts">${BONUS.pts} pts</div>
+      <div class="checkbox ${week.bonus?'checked':''}" onclick="toggleBonus()">${week.bonus?'✓':''}</div>
+    </div>
+  `;
+  html += '</div>';
+
+  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--coral)"></span>Habitudes qui font perdre des points</div>';
+  PENALTIES.forEach(p=>{
+    const count = (day.penalties && day.penalties[p.id]) || 0;
+    html += `
+      <button class="penalty-chip" onclick="addPenalty('${p.id}')">
+        <div class="penalty-icon">${p.icon}</div>
+        <div class="penalty-label">${p.label}</div>
+        <div class="penalty-pts">-${p.pts}</div>
+        ${count>0 ? `<div class="penalty-count">${count}</div>` : ''}
+      </button>
+    `;
+  });
+  html += `<div class="empty-hint">Touche une habitude pour l'ajouter</div>`;
+  html += '</div>';
+
+  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--gold)"></span>Bilan de la semaine</div>';
+  html += '<table class="recap"><tr><th>Jour</th><th>Gagnés</th><th>Perdus</th><th>Total</th></tr>';
+  let weekTotal = 0;
+  JOURS.forEach(j=>{
+    const d = (week.days && week.days[j]) || {checks:{}, penalties:{}};
+    const t = dayTotals(d, j);
+    weekTotal += t.total;
+    html += `<tr class="${j===today?'today-row':''}">
+      <td>${j}</td>
+      <td class="gain">${t.gained ? '+'+t.gained : '–'}</td>
+      <td class="loss">${t.lost ? '-'+t.lost : '–'}</td>
+      <td>${t.total}</td>
+    </tr>`;
+  });
+  html += `<tr><td colspan="3" style="font-weight:700;">Total semaine ${week.bonus ? `<span class="bonus-tag">+ bonus ${BONUS.pts}</span>` : ''}</td><td style="font-weight:800;">${weekTotal + (week.bonus?BONUS.pts:0)}</td></tr>`;
+  html += '</table></div>';
+
+  html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--sage)"></span>Coin des récompenses</div>';
+  REWARDS.forEach(r=>{
+    const can = balance >= r.cost;
+    html += `
+      <div class="reward-row">
+        <div class="reward-icon">${r.icon}</div>
+        <div class="reward-label">${r.label}</div>
+        <div class="reward-cost">${r.cost} pts</div>
+        <button class="reward-btn" ${can?'':'disabled'} onclick='redeem(${JSON.stringify(r)})'>Échanger</button>
+      </div>
+    `;
+  });
+  html += `<div class="history-toggle" onclick="toggleHistory()">${historyOpen? 'Masquer' : 'Voir'} l'historique des échanges (${(child.redemptions||[]).length})</div>`;
+  if(historyOpen){
+    const reds = child.redemptions||[];
+    if(reds.length===0){
+      html += `<div class="empty-hint">Aucun échange pour l'instant.</div>`;
+    } else {
+      reds.slice().reverse().forEach((r,i)=>{
+        const realIndex = reds.length-1-i;
+        const d = new Date(r.date);
+        html += `<div class="history-item"><span>${r.reward} · -${r.cost} pts · ${d.toLocaleDateString('fr-FR')}</span><button class="undo-btn" onclick="undoRedeem(${realIndex})">Annuler</button></div>`;
+      });
+    }
+  }
+  html += '</div>';
+
+  if(removingSlug === child.id){
+    html += `<div class="card" style="text-align:center;">
+      <div style="font-size:13px;margin-bottom:8px;">Supprimer le tableau de ${escapeHtml(child.name)} ? Cette action est définitive.</div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button class="reward-btn" style="background:var(--coral);" onclick="doRemove('${child.id}')">Oui, supprimer</button>
+        <button class="reward-btn" style="background:#DDE3E9;color:#5C6B7A;" onclick="cancelRemove()">Annuler</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="remove-kid" onclick="askRemove('${child.id}')">Supprimer ${escapeHtml(child.name)}</div>`;
+  }
+
+  document.getElementById('content').innerHTML = html;
+}
+
+init();
+</script>
+</body>
+</html>
