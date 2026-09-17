@@ -180,7 +180,22 @@ let removingSlug = null;
 let historyOpen = false;
 
 function todayFR(){ const idx=(new Date().getDay()+6)%7; return JOURS[idx]; }
-function weekStartISO(){ const d=new Date(); const idx=(d.getDay()+6)%7; d.setDate(d.getDate()-idx); return d.toISOString().slice(0,10); }
+let weekOffset = 0;
+function weekStartISO(offset){
+  offset = offset || 0;
+  const d=new Date(); const idx=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-idx+(offset*7));
+  return d.toISOString().slice(0,10);
+}
+function weekRangeLabel(offset){
+  const start = new Date(weekStartISO(offset)+'T00:00:00');
+  const end = new Date(start); end.setDate(end.getDate()+6);
+  const fmt = (d)=>d.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
+  return `${fmt(start)} – ${fmt(end)}`;
+}
+function prevWeek(){ weekOffset -= 1; render(); }
+function nextWeek(){ if(weekOffset < 0){ weekOffset += 1; render(); } }
+function goToday(){ weekOffset = 0; currentDay = todayFR(); render(); }
 function slugify(name){
   return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || ('enfant'+Date.now());
 }
@@ -209,7 +224,7 @@ function balanceTotal(child){
   return total - spent;
 }
 function getCurrentChild(){ return CHILDREN.find(c=>c.id===currentSlug) || null; }
-function ensureWeek(child){ const ws=weekStartISO(); return (child.weeks && child.weeks[ws]) ? child.weeks[ws] : {days:{}, bonus:false}; }
+function ensureWeek(child){ const ws=weekStartISO(weekOffset); return (child.weeks && child.weeks[ws]) ? child.weeks[ws] : {days:{}, bonus:false}; }
 function ensureDay(week, jour){ return (week.days && week.days[jour]) ? week.days[jour] : {checks:{}, penalties:{}}; }
 
 function deepMerge(target, patch){
@@ -262,25 +277,32 @@ async function addChild2(){
   render();
 }
 function cancelAdd(){ addingChild=false; render(); }
-function selectChild(id){ currentSlug = id; historyOpen=false; addingChild=false; removingSlug=null; render(); }
+function selectChild(id){ currentSlug = id; historyOpen=false; addingChild=false; removingSlug=null; weekOffset=0; render(); }
 function selectDay(jour){ currentDay = jour; render(); }
 
 async function toggleDefi(defiId){
   const child=getCurrentChild(); if(!child) return;
-  const ws=weekStartISO(); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
+  const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
   const newVal = !(day.checks && day.checks[defiId]);
   await patchChild({ weeks: { [ws]: { days: { [currentDay]: { checks: { [defiId]: newVal } } } } } });
 }
 async function toggleBonus(){
   const child=getCurrentChild(); if(!child) return;
-  const ws=weekStartISO(); const week=ensureWeek(child);
+  const ws=weekStartISO(weekOffset); const week=ensureWeek(child);
   await patchChild({ weeks: { [ws]: { bonus: !week.bonus } } });
 }
 async function addPenalty(penId){
   const child=getCurrentChild(); if(!child) return;
-  const ws=weekStartISO(); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
+  const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
   const newCount = ((day.penalties && day.penalties[penId])||0)+1;
   await patchChild({ weeks: { [ws]: { days: { [currentDay]: { penalties: { [penId]: newCount } } } } } });
+}
+async function removePenalty(penId){
+  const child=getCurrentChild(); if(!child) return;
+  const ws=weekStartISO(weekOffset); const week=ensureWeek(child); const day=ensureDay(week,currentDay);
+  const cur = ((day.penalties && day.penalties[penId])||0);
+  if(cur<=0) return;
+  await patchChild({ weeks: { [ws]: { days: { [currentDay]: { penalties: { [penId]: cur-1 } } } } } });
 }
 async function redeem(reward){
   const child=getCurrentChild(); if(!child) return;
@@ -348,10 +370,10 @@ function render(){
   html += `
     <div class="balance-card">
       <div>
-        <div class="label">SOLDE DE ${escapeHtml(child.name).toUpperCase()}</div>
+        <div class="label">SOLDE DE ${escapeHtml(child.name).toUpperCase()} (CUMULÉ)</div>
         <div class="num">${balance} pts</div>
       </div>
-      <div class="today">Aujourd'hui (${currentDay})<b>${totals.total >= 0 ? '+' : ''}${totals.total} pts</b></div>
+      <div class="today">${weekOffset===0 ? "Aujourd'hui" : "Jour choisi"} (${currentDay})<b>${totals.total >= 0 ? '+' : ''}${totals.total} pts</b></div>
     </div>
   `;
 
@@ -393,18 +415,29 @@ function render(){
   PENALTIES.forEach(p=>{
     const count = (day.penalties && day.penalties[p.id]) || 0;
     html += `
-      <button class="penalty-chip" onclick="addPenalty('${p.id}')">
-        <div class="penalty-icon">${p.icon}</div>
-        <div class="penalty-label">${p.label}</div>
-        <div class="penalty-pts">-${p.pts}</div>
-        ${count>0 ? `<div class="penalty-count">${count}</div>` : ''}
-      </button>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+        <button class="penalty-chip" style="margin-bottom:0;" onclick="addPenalty('${p.id}')">
+          <div class="penalty-icon">${p.icon}</div>
+          <div class="penalty-label">${p.label}</div>
+          <div class="penalty-pts">-${p.pts}</div>
+          ${count>0 ? `<div class="penalty-count">${count}</div>` : ''}
+        </button>
+        ${count>0 ? `<button class="reward-btn" style="background:#DDE3E9;color:#5C6B7A;padding:9px 10px;" onclick="event.stopPropagation(); removePenalty('${p.id}')">−</button>` : ''}
+      </div>
     `;
   });
   html += `<div class="empty-hint">Touche une habitude pour l'ajouter</div>`;
   html += '</div>';
 
   html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--gold)"></span>Bilan de la semaine</div>';
+  html += `
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
+      <button class="reward-btn" style="background:#F3F6FA;color:var(--navy);padding:6px 10px;" onclick="prevWeek()">◀</button>
+      <div style="font-family:'Fredoka';font-size:13px;color:var(--navy-dark);font-weight:600;min-width:120px;text-align:center;">${weekRangeLabel(weekOffset)}</div>
+      <button class="reward-btn" style="background:#F3F6FA;color:var(--navy);padding:6px 10px;" ${weekOffset>=0?'disabled':''} onclick="nextWeek()">▶</button>
+    </div>
+    ${weekOffset!==0 ? `<div class="empty-hint" style="cursor:pointer;color:var(--navy);font-weight:700;" onclick="goToday()">↺ Revenir à la semaine actuelle</div>` : ''}
+  `;
   html += '<table class="recap"><tr><th>Jour</th><th>Gagnés</th><th>Perdus</th><th>Total</th></tr>';
   let weekTotal = 0;
   JOURS.forEach(j=>{
