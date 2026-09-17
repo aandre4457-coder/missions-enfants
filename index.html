@@ -85,6 +85,10 @@
   .loading{text-align:center;padding:40px 0;color:#5C6B7A;font-size:14px;}
   .remove-kid{font-size:11px;color:#B0BAC5;text-align:center;margin-top:2px;cursor:pointer;}
   .sync-badge{font-size:11px;color:#8B98A6;text-align:center;margin-top:-4px;margin-bottom:10px;}
+  @keyframes slideFromRight{ from{ transform:translateX(22px); opacity:0.3; } to{ transform:translateX(0); opacity:1; } }
+  @keyframes slideFromLeft{ from{ transform:translateX(-22px); opacity:0.3; } to{ transform:translateX(0); opacity:1; } }
+  .anim-slide-next{ animation: slideFromRight 0.22s ease-out; }
+  .anim-slide-prev{ animation: slideFromLeft 0.22s ease-out; }
 </style>
 </head>
 <body>
@@ -181,6 +185,7 @@ let historyOpen = false;
 
 function todayFR(){ const idx=(new Date().getDay()+6)%7; return JOURS[idx]; }
 let weekOffset = 0;
+let navDirection = null;
 function weekStartISO(offset){
   offset = offset || 0;
   const d=new Date(); const idx=(d.getDay()+6)%7;
@@ -193,9 +198,9 @@ function weekRangeLabel(offset){
   const fmt = (d)=>d.toLocaleDateString('fr-FR', {day:'numeric', month:'short'});
   return `${fmt(start)} – ${fmt(end)}`;
 }
-function prevWeek(){ weekOffset -= 1; render(); }
-function nextWeek(){ if(weekOffset < 0){ weekOffset += 1; render(); } }
-function goToday(){ weekOffset = 0; currentDay = todayFR(); render(); }
+function prevWeek(){ weekOffset -= 1; navDirection='prev'; render(); }
+function nextWeek(){ if(weekOffset < 0){ weekOffset += 1; navDirection='next'; render(); } }
+function goToday(){ weekOffset = 0; currentDay = todayFR(); navDirection=null; render(); }
 function dateForDay(offset, jourIndex){
   const d = new Date(weekStartISO(offset)+'T00:00:00');
   d.setDate(d.getDate()+jourIndex);
@@ -373,8 +378,10 @@ function render(){
   const balance = balanceTotal(child);
   const today = todayFR();
 
+  const navDir = navDirection; navDirection = null;
+  const animClass = navDir === 'next' ? 'anim-slide-next' : navDir === 'prev' ? 'anim-slide-prev' : '';
   html += `
-    <div id="weekSwipeZone" style="padding:2px 4px 6px;border-radius:18px;">
+    <div id="weekSwipeZone" class="${animClass}" style="padding:2px 4px 6px;border-radius:18px;">
     <div class="balance-card">
       <div>
         <div class="label">SOLDE DE ${escapeHtml(child.name).toUpperCase()} (CUMULÉ)</div>
@@ -439,7 +446,7 @@ function render(){
   html += `<div class="empty-hint">Touche une habitude pour l'ajouter</div>`;
   html += '</div>';
 
-  html += '<div class="card" id="recapCard"><div class="section-title"><span class="dot" style="background:var(--gold)"></span>Bilan de la semaine</div>';
+  html += `<div class="card ${animClass}" id="recapCard"><div class="section-title"><span class="dot" style="background:var(--gold)"></span>Bilan de la semaine</div>`;
   html += `
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px;">
       <button class="reward-btn" style="background:#F3F6FA;color:var(--navy);padding:6px 10px;" onclick="prevWeek()">◀</button>
