@@ -30,7 +30,7 @@
   .kid-tab{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:999px;background:#fff;border:2px solid var(--line);font-family:'Fredoka';font-weight:600;font-size:14px;color:#5C6B7A;cursor:pointer;white-space:nowrap;}
   .kid-tab.active{background:var(--navy);border-color:var(--navy);color:#fff;}
   .kid-tab.add{border-style:dashed;color:var(--navy);}
-  .day-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;}
+  .day-row{display:flex;gap:6px;justify-content:space-between;padding-bottom:4px;}
   .day-pill{flex:0 0 auto;padding:7px 10px;border-radius:12px;background:#F3F6FA;border:2px solid transparent;font-size:12px;font-weight:700;color:#5C6B7A;cursor:pointer;text-align:center;line-height:1.5;}
   .day-pill.today{color:var(--navy);}
   .day-pill.active{background:var(--navy);color:#fff;}
@@ -383,12 +383,13 @@ function render(){
     </div>
   `;
 
-  html += '<div class="day-row">';
+  html += '<div class="day-row" id="dayRow">';
   JOURS.forEach((j,idx)=>{
     const dLabel = shortDate(dateForDay(weekOffset, idx));
     html += `<div class="day-pill ${j===currentDay?'active':''} ${j===today && weekOffset===0?'today':''}" onclick="selectDay('${j}')">${j.slice(0,3)}<br><span style="font-size:10px;font-weight:600;opacity:0.85;">${dLabel}</span></div>`;
   });
   html += '</div>';
+  html += `<div class="empty-hint" style="margin-top:-6px;margin-bottom:8px;">‹ Glisse ici pour changer de semaine ›</div>`;
 
   const currentDayIdx = JOURS.indexOf(currentDay);
   html += '<div class="card"><div class="section-title"><span class="dot" style="background:var(--navy)"></span>Missions du ' + currentDay.toLowerCase() + ' <span style="color:#9AA6B2;font-weight:600;font-size:12px;">' + shortDate(dateForDay(weekOffset, currentDayIdx)) + '</span></div>';
@@ -445,7 +446,6 @@ function render(){
       <button class="reward-btn" style="background:#F3F6FA;color:var(--navy);padding:6px 10px;" ${weekOffset>=0?'disabled':''} onclick="nextWeek()">▶</button>
     </div>
     ${weekOffset!==0 ? `<div class="empty-hint" style="cursor:pointer;color:var(--navy);font-weight:700;" onclick="goToday()">↺ Revenir à la semaine actuelle</div>` : ''}
-    <div class="empty-hint" style="margin-top:2px;">‹ Glisse ici pour changer de semaine ›</div>
   `;
   html += '<table class="recap"><tr><th>Jour</th><th>Gagnés</th><th>Perdus</th><th>Total</th></tr>';
   let weekTotal = 0;
@@ -516,7 +516,7 @@ if('serviceWorker' in navigator){
   let startX = null, startY = null, startedInZone = false;
   document.addEventListener('touchstart', (e)=>{
     const t = e.touches[0];
-    startedInZone = !!(e.target.closest && e.target.closest('#recapCard'));
+    startedInZone = !!(e.target.closest && e.target.closest('#dayRow'));
     startX = t.clientX; startY = t.clientY;
   }, {passive:true});
   document.addEventListener('touchend', (e)=>{
