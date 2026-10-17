@@ -120,9 +120,17 @@ const firestoreDb = firebase.firestore();
 const auth = firebase.auth();
 
 function connexionGoogle() {
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-    .catch(e => alert("Connexion impossible : " + e.code));
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(e => {
+    if (e.code === 'auth/operation-not-supported-in-this-environment' ||
+        e.code === 'auth/popup-blocked') {
+      auth.signInWithRedirect(provider);
+    } else {
+      alert("Connexion impossible : " + e.code);
+    }
+  });
 }
+auth.getRedirectResult().catch(e => alert("Connexion impossible : " + e.code));
 function connexionEmail(email, mdp) {
   auth.signInWithEmailAndPassword(email, mdp)
     .catch(e => alert("Connexion impossible : " + e.code));
