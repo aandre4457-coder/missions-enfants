@@ -98,25 +98,14 @@
     <h1>Bons points & récompenses</h1>
     <p>Les bons comportements du quotidien, récompensés</p>
   </div>
-  <div class="sync-badge">🔄 Synchronisé entre tous les appareils</div>
+  <div class="sync-badge">🔄 Synchronisé entre tous les appareils · <span onclick="auth.signOut()" style="cursor:pointer;text-decoration:underline;">Se déconnecter</span></div>
   <div id="content"><div class="loading">Chargement…</div></div>
 </div>
 <div class="toast" id="toast"></div>
 
-<!--
-  ============================================================
-  CONFIGURATION FIREBASE — à faire une seule fois
-  1) Va sur https://console.firebase.google.com
-  2) Crée un projet (gratuit)
-  3) Dans le projet : "Créer une base de données" -> Firestore Database
-     -> commence en "mode test"
-  4) Dans les paramètres du projet (roue dentée) -> "Vos applications"
-     -> ajoute une application Web (</>) -> copie l'objet de config
-  5) Remplace les valeurs ci-dessous par les tiennes
-  ============================================================
--->
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-auth-compat.js"></script>
 <script>
 const firebaseConfig = {
   apiKey: "AIzaSyAGQc17kkFwDRECl8kOr9gicwEoa-B0ag0",
@@ -128,6 +117,16 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const firestoreDb = firebase.firestore();
+const auth = firebase.auth();
+
+function connexionGoogle() {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+    .catch(e => alert("Connexion impossible : " + e.code));
+}
+function connexionEmail(email, mdp) {
+  auth.signInWithEmailAndPassword(email, mdp)
+    .catch(e => alert("Connexion impossible : " + e.code));
+}
 </script>
 
 <script>
@@ -182,6 +181,7 @@ let currentDay = todayFR();
 let addingChild = false;
 let removingSlug = null;
 let historyOpen = false;
+let unsubscribeSnap = null;
 
 function todayFR(){ const idx=(new Date().getDay()+6)%7; return JOURS[idx]; }
 let weekOffset = 0;
@@ -261,7 +261,7 @@ async function patchChild(patch){
 
 function init(){
   try{
-    firestoreDb.collection('enfants').orderBy('createdAt','asc').onSnapshot(
+    unsubscribeSnap = firestoreDb.collection('enfants').orderBy('createdAt','asc').onSnapshot(
       snap=>{
         childrenLoaded = true;
         CHILDREN = snap.docs.map(d=>({id:d.id, ...d.data()}));
@@ -273,6 +273,20 @@ function init(){
       err=>{ dbError = true; render(); }
     );
   }catch(e){ dbError = true; render(); }
+}
+
+function renderLogin(){
+  document.getElementById('content').innerHTML = `
+    <div class="card" style="text-align:center;">
+      <div class="section-title" style="justify-content:center;"><span class="dot"></span>Connexion</div>
+      <button class="reward-btn" style="width:100%;padding:12px;font-size:14px;" onclick="connexionGoogle()">Se connecter avec Google</button>
+      <div class="empty-hint" style="margin:10px 0;">ou</div>
+      <div class="add-form" style="flex-direction:column;">
+        <input id="loginEmail" type="email" placeholder="E-mail" autocomplete="username">
+        <input id="loginMdp" type="password" placeholder="Mot de passe" autocomplete="current-password">
+        <button onclick="connexionEmail(document.getElementById('loginEmail').value.trim(), document.getElementById('loginMdp').value)">Se connecter</button>
+      </div>
+    </div>`;
 }
 
 async function addChild2(){
@@ -343,7 +357,7 @@ async function doRemove(id){
 function render(){
   const contentEl = document.getElementById('content');
   if(dbError){
-    contentEl.innerHTML = `<div class="card"><div class="section-title"><span class="dot" style="background:var(--coral)"></span>Connexion impossible</div><p class="empty-hint">Vérifie ta connexion internet, ou que la configuration Firebase en haut du fichier a bien été remplie.</p></div>`;
+    contentEl.innerHTML = `<div class="card"><div class="section-title"><span class="dot" style="background:var(--coral)"></span>Accès impossible</div><p class="empty-hint">Accès refusé ou problème de connexion. Vérifie que tu es connecté avec une adresse autorisée, puis recharge la page.</p></div>`;
     return;
   }
   if(!childrenLoaded){ contentEl.innerHTML = '<div class="loading">Chargement…</div>'; return; }
@@ -513,7 +527,12 @@ function render(){
   document.getElementById('content').innerHTML = html;
 }
 
-init();
+auth.onAuthStateChanged(u=>{
+  if(unsubscribeSnap){ unsubscribeSnap(); unsubscribeSnap = null; }
+  dbError = false; childrenLoaded = false; CHILDREN = []; currentSlug = null;
+  if(u){ render(); init(); } else { renderLogin(); }
+});
+
 if('serviceWorker' in navigator){
   window.addEventListener('load', ()=>{
     navigator.serviceWorker.register('service-worker.js').catch(()=>{});
